@@ -1,0 +1,19 @@
+Em WebRTC é preciso saber o endereço de cada cliente para estabilizar uma conexão. Esse processo é conhecido como signaling (coordenação da comunicação).
+É utilizado o Interactive Connectivity Establishment (ICE) para resolver as complexidades de acesso ás redes do mundo real. É uma técnica usada em 
+redes de computadores para encontrar a forma mais efetiva de 2 computadores se comunicarem da maneira mais direta em redes peer to peer.
+
+Podemos criar mecanismos para garantir que, se a conexão direta entre clientes falhar, é possivel estabelecer a conexão nos nossos próprios servidores
+dedicados. O STUN server serve para obter o endereço externo de rede do cliente conectado e descobrir a identidade pública deles. Ele é opcional.
+O ICE tenta conectar usando o endereço do host recebido na conexão. Caso ele não consiga, ele obtém o endereço público do host utilizando o STUN Server.
+Se ele não conseguir acessar, ele vai rotear o tráfego a partir de um TURN Relay Server. Por sua vez, esse TURN é usado para garantir a comunicação
+entre os clientes, se a conexão direta falhar.
+Resumindo:
+ICE = rota mais curta de comunicação entre os clientes
+STUN = descobre o endereço necessário para a conexão
+TURN = é também um STUN, com mais funcionalidades para garantir o tráfego de mensagens e streams como contingencia.
+
+PeerJS = certifica que os clientes conectados possuem um identificador e que seja único. Além disso, abstrai a complexidade dos eventos que acontecem
+do WebRTC.
+PeerJS utiliza o PeerServer para criar esse id único.
+
+LINKS:
