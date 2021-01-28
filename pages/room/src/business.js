@@ -13,7 +13,7 @@ class Business {
     this.currentPeer = {};
 
     this.peers = new Map();
-    this.usersRecording = new Map();
+    this.usersRecordings = new Map();
   }
 
   static initialize(deps) {
@@ -23,6 +23,7 @@ class Business {
 
   async _init() {
     this.view.configureRecordButton(this.onRecordPressed.bind(this));
+    this.view.configureLeaveButton(this.onLeavePressed.bind(this));
 
     this.currentStream = await this.media.getCamera();
     this.socket = this.socketBuilder
@@ -44,12 +45,12 @@ class Business {
 
   addVideoStream(userId, stream = this.currentStream) {
     const recorderInstance = new Recorder(userId, stream);
-    this.usersRecording.set(recorderInstance.filename, recorderInstance);
+    this.usersRecordings.set(recorderInstance.filename, recorderInstance);
     if (this.recordingEnabled) {
       recorderInstance.startRecording();
     }
 
-    const isCurrentId = false;
+    const isCurrentId = userId === this.currentPeer.id;
     this.view.renderVideo({
       userId,
       stream,
@@ -74,6 +75,7 @@ class Business {
       }
 
       this.view.setParticipants(this.peers.size);
+      this.stopRecording(userId);
       this.view.removeVideoElement(userId);
     };
   }
@@ -102,6 +104,12 @@ class Business {
   onPeerStreamReceived() {
     return (call, stream) => {
       const callerId = call.peer;
+
+      if (this.peers.has(callerId)) {
+        console.log("ignoring second call", callerId);
+        return;
+      }
+
       this.addVideoStream(callerId, stream);
       this.peers.set(callerId, { call });
 
@@ -126,7 +134,7 @@ class Business {
     this.recordingEnabled = recordingEnabled;
     console.log("Pressionou!", recordingEnabled);
 
-    for (const [key, value] of this.usersRecording) {
+    for (const [key, value] of this.usersRecordings) {
       if (this.recordingEnabled) {
         value.startRecording();
         continue;
@@ -137,7 +145,7 @@ class Business {
   }
 
   // se um user entrar e sair da call durante a gravação, precisa parar a gravação anterior
-  async stopRecording() {
+  async stopRecording(userId) {
     const usersRecordings = this.usersRecordings;
     for (const [key, value] of usersRecordings) {
       const isContextUser = key.includes(userId);
@@ -148,6 +156,19 @@ class Business {
       if (!isRecordingActive) continue;
 
       await rec.stopRecording();
+      this.playRecordings(key);
     }
+  }
+
+  playRecordings(userId) {
+    const user = this.usersRecordings.get(userId);
+    const videosURLs = user.getAllVideosURLs();
+    videosURLs.map((url) => {
+      this.view.renderVideo({ url, userId });
+    });
+  }
+
+  onLeavePressed() {
+    this.usersRecordings.forEach((value, key) => value.download());
   }
 }
